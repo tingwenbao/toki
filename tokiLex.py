@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import re
-from datetime import timedelta
+import datetime
+import pandas as pd
 
 from TokiClass import TokiTask
 
@@ -10,7 +11,8 @@ tokiResult = TokiTask()
 ### Tokens ###
 tokens = (
     'SCHEDULE', 'AT', 'FROM', 'TO', 'FOR', 'EVERY', 'EVERYOTHER', 'APPOINTMENT', 'WITH',
-    'NUMBER', 'DATE', 'TIMES', 'WEEK','MONTH','YEAR','HOUR','MINUTE','DAY',
+    'DATE', 'TIMES', 'WEEK','MONTH','YEAR','HOUR','MINUTE','DAY', 'WEEKDAY',
+    'ON', 'NUMBER'
 )
 
 t_SCHEDULE = r'schedule'
@@ -22,13 +24,19 @@ t_EVERY = r'every'
 t_EVERYOTHER = r'every other'
 t_APPOINTMENT = r'appointment'
 t_WITH = r'with'
-t_DATE = r'[(\d+/\d+/\d+)|(\d+\-\d+\-\d+)]'  # 1/1/2018 or 2018-1-1
 t_TIMES = r'times a'
-t_WEEK = r'[week|weeks]'
-t_MONTH = r'[month|months]'
-t_YEAR = r'[year|years|yr|yrs]'
-t_HOUR = r'[hour|hours|hr|hrs]'
-t_DAY = r'[day|days|d]'
+t_WEEK = r'week|weeks'
+t_MONTH = r'month|months'
+t_YEAR = r'year|years|yr|yrs'
+t_HOUR = r'hour|hours|hr|hrs'
+t_DAY = r'day|days|d'
+t_MINUTE = r'minute|minutes|min'
+t_ON = r'on'
+#t_WEEKDAY = r'MONDAY|'
+
+def t_DATE(t):
+    r'(\d{2})[\/.-](\d{2})[/.-](\d{4})' # 1/1/2018 or 1-1-2018
+    return t
 
 def t_NUMBER(t):
     r'\d+'
@@ -39,11 +47,7 @@ def t_NUMBER(t):
         t.value = 0
     return t
 
-# def t_MINUTE(t):
-#     r'minute|minutes|min'
-#     t.value = 1
-#     return t
-t_MINUTE = r'minute|minutes|min'
+
 # Ignored characters
 t_ignore = " \t"
 
@@ -71,7 +75,7 @@ lexer = lex.lex()
 #         | EVERY NUMBER WEEK
 #         | EVERY NUMBER MONTH
 #         | EVERY NUMBER YEAR'''
-
+start = 'ondate'
 
 
 def p_expression_duration(t):
@@ -81,25 +85,26 @@ def p_expression_duration(t):
         | FOR NUMBER WEEK
         | FOR NUMBER MONTH
         | FOR NUMBER YEAR'''
-    print(t[1])
-    print(t[2])
-    print(t[3])
-    print(t_MINUTE)
-    print(re.match(t_MINUTE, t[3]))
-    #duration = timedelta(minutes = t[2] * t[3])
+
     if t[1] == 'for' and re.match(t_MINUTE, t[3]):
-        duration = timedelta(minutes = int(t[2]))
-    # elif t[1]=='for' and t_HOUR.match(t[3]):
-    #     duration = timedelta(hours = number[t[2]])
-    # elif t[1]=='for' and t_DAY.match(t[3]):
-    #     duration = timedelta(days = number[t[2]])
-    # elif t[1]=='for' and t_MONTH.match(t[3]):
-    #     duration = timedelta(months = number[t[2]])
-    # elif t[1]=='for' and t_YEAR.match(t[3]):
-    #     duration = timedelta(years = number[t[2]])
+        duration = datetime.timedelta(minutes = int(t[2]))
+    elif t[1]=='for' and re.match(t_HOUR, t[3]):
+        duration = datetime.timedelta(hours = number[t[2]])
+    elif t[1]=='for' and re.match(t_DAY, t[3]):
+        duration = datetime.timedelta(days = number[t[2]])
+    elif t[1]=='for' and re.match(t_MONTH, t[3]):
+        duration = datetime.timedelta(months = number[t[2]])
+    elif t[1]=='for' and re.match(t_YEAR, t[3]):
+        duration = datetime.timedelta(years = number[t[2]])
     tokiResult.duration = duration
     return duration
 
+def p_expression_ondate(t):
+    'ondate : ON DATE'
+    if t[1] == 'on':
+        d = pd.to_datetime(t[2])
+    tokiResult.startTime = d
+    return d
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
