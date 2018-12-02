@@ -7,12 +7,13 @@ from TokiClass import TokiTask
 
 global tokiResult
 tokiResult = TokiTask()
+tokiResult.startTime = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
 
 ### Tokens ###
 tokens = (
     'SCHEDULE', 'AT', 'FROM', 'TO', 'FOR', 'EVERY', 'EVERYOTHER', 'APPOINTMENT', 'WITH',
     'DATE', 'TIMES', 'WEEK','MONTH','YEAR','HOUR','MINUTE','DAY', 'WEEKDAY',
-    'ON', 'NUMBER'
+    'ON', 'NUMBER','AM','PM','OCLOCK'
 )
 
 t_SCHEDULE = r'schedule'
@@ -32,10 +33,16 @@ t_HOUR = r'hour|hours|hr|hrs'
 t_DAY = r'day|days|d'
 t_MINUTE = r'minute|minutes|min'
 t_ON = r'on'
+t_AM = r'AM'
+t_PM = r'PM'
 #t_WEEKDAY = r'MONDAY|'
 
 def t_DATE(t):
     r'(\d{2})[\/.-](\d{2})[/.-](\d{4})' # 1/1/2018 or 1-1-2018
+    return t
+
+def t_OCLOCK(t):
+    r'(\d+)\:(\d{2})'  # 11:00
     return t
 
 def t_NUMBER(t):
@@ -60,11 +67,6 @@ import ply.lex as lex
 lexer = lex.lex()
 
 ### Parsing Rules ###
-#
-# precedence = (
-#
-# )
-
 
 # def p_expression_frequency(t):
 #     '''expression: EVERY expression
@@ -75,11 +77,12 @@ lexer = lex.lex()
 #         | EVERY NUMBER WEEK
 #         | EVERY NUMBER MONTH
 #         | EVERY NUMBER YEAR'''
-start = 'ondate'
+
+start = 'attime'
 
 
 def p_expression_duration(t):
-    '''experssion : FOR NUMBER MINUTE
+    '''duration : FOR NUMBER MINUTE
         | FOR NUMBER HOUR
         | FOR NUMBER DAY
         | FOR NUMBER WEEK
@@ -105,6 +108,24 @@ def p_expression_ondate(t):
         d = pd.to_datetime(t[2])
     tokiResult.startTime = d
     return d
+
+def p_expression_attime(t):
+    '''attime : AT NUMBER AM
+        | AT NUMBER PM
+        | AT OCLOCK'''
+    if t[1]=='at' and t[3]=='AM':
+        h = datetime.timedelta(hours = t[2])
+    elif t[1]=='at' and t[3]=='PM':
+        h =datetime.timedelta(hours = 12 + int(t[2]))
+    else:
+        h =  pd.to_datetime(t[2]).time()
+    print(h)
+    print(tokiResult.startTime)
+    tokiResult.startTime = tokiResult.startTime + h
+    return h
+
+
+
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
