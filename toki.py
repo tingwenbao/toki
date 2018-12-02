@@ -10,11 +10,8 @@ class TokiException(Exception):
 
 def run(text_in):
     ## Function to run what input in command ##
-    tokens = text_in.split() #FIXME: can't split 1+1 yet
-    for t in tokens:
-        print(t)
-    error(0, "test")
-
+    tokiLex.parser.parse(text_in)
+    print(tokiLex.tokiResult.duration)
 
 def error(line_num, message):
     ## Function for Error Handling ##
