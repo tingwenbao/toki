@@ -13,32 +13,89 @@ tokiResult.startTime = datetime.datetime.combine(datetime.date.today(), datetime
 tokens = (
     'SCHEDULE', 'AT', 'FROM', 'TO', 'FOR', 'EVERY', 'EVERYOTHER', 'APPOINTMENT', 'WITH',
     'DATE', 'TIMES', 'WEEK','MONTH','YEAR','HOUR','MINUTE','DAY', 'WEEKDAY',
-    'ON', 'NUMBER','AM','PM','OCLOCK'
+    'ON', 'NUMBER','AM','PM','OCLOCK', 'PERSON'
 )
 
-t_SCHEDULE = r'schedule'
-t_AT = r'at'
-t_FROM = r'from'
-t_TO = r'to'
-t_FOR = r'for'
-t_EVERY = r'every'
-t_EVERYOTHER = r'every other'
-t_APPOINTMENT = r'appointment'
-t_WITH = r'with'
-t_TIMES = r'times a'
-t_WEEK = r'week|weeks'
-t_MONTH = r'month|months'
-t_YEAR = r'year|years|yr|yrs'
-t_HOUR = r'hour|hours|hr|hrs'
-t_DAY = r'day|days|d'
-t_MINUTE = r'minute|minutes|min'
-t_ON = r'on'
-t_AM = r'AM'
-t_PM = r'PM'
+def t_SCHEDULE(t):
+    r'schedule'
+    return t
+
+def t_AT(t):
+    r'at'
+    return t
+
+def t_FROM(t):
+    r'from'
+    return t
+
+def t_TO(t):
+    r'to'
+    return t
+
+def t_FOR(t):
+    r'for'
+    return t
+
+def t_EVERY(t):
+    r'every'
+    return t
+
+def t_EVERYOTHER(t):
+    r'every other'
+    return t
+
+def t_APPOINTMENT(t):
+    r'appointment'
+    return t
+
+def t_WITH(t):
+    r'with'
+    return t
+
+def t_TIMES(t):
+    r'times a'
+    return t
+
+def t_WEEK(t):
+    r'week|weeks'
+    return t
+
+def t_MONTH(t):
+    r'month|months'
+    return t
+
+def t_YEAR(t):
+    r'year|years|yr|yrs'
+    return t
+
+def t_HOUR(t):
+    r'hour|hours|hr|hrs'
+    return t
+
+def t_DAY(t):
+    r'day|days|d'
+    return t
+
+def t_MINUTE(t):
+    r'minute|minutes|min'
+    return t
+
+def t_ON(t):
+    r'on'
+    return t
+
+def t_AM(t):
+    r'AM'
+    return t
+
+def t_PM(t):
+    r'PM'
+    return t
+
 #t_WEEKDAY = r'MONDAY|'
 
 def t_DATE(t):
-    r'(\d{2})[\/.-](\d{2})[/.-](\d{4})' # 1/1/2018 or 1-1-2018
+    r'(\d{2})[/.-](\d{2})[/.-](\d{4})' # 1/1/2018 or 1-1-2018
     return t
 
 def t_OCLOCK(t):
@@ -53,6 +110,11 @@ def t_NUMBER(t):
         print("Integer value too large %d", t.value)
         t.value = 0
     return t
+
+def t_PERSON(t):
+    r'([A-Z][a-z]*)([\\s\\\'-][A-Z][a-z]*)*'
+    return t
+
 
 
 # Ignored characters
@@ -78,7 +140,13 @@ lexer = lex.lex()
 #         | EVERY NUMBER MONTH
 #         | EVERY NUMBER YEAR'''
 
-start = 'attime'
+start = 'schedule'
+
+def p_expression_schedule(t):
+    '''schedule : SCHEDULE appointment ondate
+        | SCHEDULE appointment ondate attime
+        | SCHEDULE appointment ondate attime duration'''
+    print(tokiResult)
 
 
 def p_expression_duration(t):
@@ -100,14 +168,14 @@ def p_expression_duration(t):
     elif t[1]=='for' and re.match(t_YEAR, t[3]):
         duration = datetime.timedelta(years = number[t[2]])
     tokiResult.duration = duration
-    return duration
+
 
 def p_expression_ondate(t):
     'ondate : ON DATE'
     if t[1] == 'on':
         d = pd.to_datetime(t[2])
     tokiResult.startTime = d
-    return d
+
 
 def p_expression_attime(t):
     '''attime : AT NUMBER AM
@@ -119,12 +187,15 @@ def p_expression_attime(t):
         h =datetime.timedelta(hours = 12 + int(t[2]))
     else:
         h =  pd.to_datetime(t[2]).time()
-    print(h)
-    print(tokiResult.startTime)
     tokiResult.startTime = tokiResult.startTime + h
-    return h
 
 
+def p_expression_appointment(t):
+    '''appointment : APPOINTMENT WITH PERSON
+        | APPOINTMENT'''
+    if len(t)>2:
+        if t[2] == 'with':
+            tokiResult.person = t[3]
 
 
 def p_error(t):

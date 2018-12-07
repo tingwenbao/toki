@@ -11,7 +11,7 @@ class TokiException(Exception):
 def run(text_in):
     ## Function to run what input in command ##
     tokiLex.parser.parse(text_in)
-    print(tokiLex.tokiResult.startTime)
+    print(tokiLex)
 
 def error(line_num, message):
     ## Function for Error Handling ##
