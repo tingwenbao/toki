@@ -2,12 +2,17 @@
 import re
 import datetime
 import pandas as pd
+import sqlite3
 
 from TokiClass import TokiTask
 
+#create toki class
 global tokiResult
 tokiResult = TokiTask()
 tokiResult.startTime = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
+
+#connect to db
+c = conn.cursor()
 
 ### Tokens ###
 tokens = (

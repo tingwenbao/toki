@@ -3,6 +3,8 @@ import sys
 import io
 import cmd
 import tokiLex
+import sqlite3
+import os
 
 class TokiException(Exception):
     pass
@@ -23,9 +25,16 @@ def report(line_num, where, message):
     ## Function to print error message ##
     print('[line ' + str(line_num) + '] Error' + where + ': ' + message)
 
-
+def maybe_init_db():
+    if not os.path.isfile('tokidb.db'):
+        conn= sqlite3.connect('tokidb.db')
+        c = conn.cursor()
+        c.execute(''' CREATE TABLE calendar
+                (title, startTime, duration, repeat, person, Timestamp)''')
 
 def main():
+
+    maybe_init_db()
 
     while True:
         try:
@@ -36,5 +45,7 @@ def main():
 
 
 if __name__ == '__main__':
+
+
 
     main()
