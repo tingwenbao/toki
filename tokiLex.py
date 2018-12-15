@@ -6,14 +6,6 @@ import sqlite3
 
 from TokiClass import TokiTask
 
-#create toki class
-global tokiResult
-tokiResult = TokiTask()
-tokiResult.startTime = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
-
-#connect to db
-c = conn.cursor()
-
 ### Tokens ###
 tokens = (
     'SCHEDULE', 'AT', 'FROM', 'TO', 'FOR', 'EVERY', 'EVERYOTHER', 'APPOINTMENT', 'WITH',
@@ -63,26 +55,32 @@ def t_TIMES(t):
 
 def t_WEEK(t):
     r'week|weeks'
+    t.value = 'week'
     return t
 
 def t_MONTH(t):
     r'month|months'
+    t.value = 'month'
     return t
 
 def t_YEAR(t):
     r'year|years|yr|yrs'
+    t.value = 'year'
     return t
 
 def t_HOUR(t):
     r'hour|hours|hr|hrs'
+    t.value = 'hour'
     return t
 
 def t_DAY(t):
     r'day|days|d'
+    t.value = 'day'
     return t
 
 def t_MINUTE(t):
     r'minute|minutes|min'
+    t.value = 'minute'
     return t
 
 def t_ON(t):
@@ -151,7 +149,24 @@ def p_expression_schedule(t):
     '''schedule : SCHEDULE appointment ondate
         | SCHEDULE appointment ondate attime
         | SCHEDULE appointment ondate attime duration'''
-    print(tokiResult)
+
+    #create toki class
+    tokiResult = TokiTask()
+    tokiResult.startTime = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
+
+    if len(t)==4:
+        tokiResult.person = t[2]
+        tokiResult.startTime = t[3]
+    elif len(t)==5:
+        tokiResult.person = t[2]
+        tokiResult.startTime = t[3] + t[4]
+    elif len(t)==6:
+        tokiResult.person = t[2]
+        tokiResult.startTime = t[3] + t[4]
+        #tokiResult.duration = t[5]
+        tokiResult.endTime = tokiResult.startTime + t[5]
+    t[0] = tokiResult
+
 
 
 def p_expression_duration(t):
@@ -162,25 +177,28 @@ def p_expression_duration(t):
         | FOR NUMBER MONTH
         | FOR NUMBER YEAR'''
 
-    if t[1] == 'for' and re.match(t_MINUTE, t[3]):
+    if t[1] == 'for' and t[3]=='minute':
         duration = datetime.timedelta(minutes = int(t[2]))
-    elif t[1]=='for' and re.match(t_HOUR, t[3]):
-        duration = datetime.timedelta(hours = number[t[2]])
-    elif t[1]=='for' and re.match(t_DAY, t[3]):
-        duration = datetime.timedelta(days = number[t[2]])
-    elif t[1]=='for' and re.match(t_MONTH, t[3]):
-        duration = datetime.timedelta(months = number[t[2]])
-    elif t[1]=='for' and re.match(t_YEAR, t[3]):
-        duration = datetime.timedelta(years = number[t[2]])
-    tokiResult.duration = duration
+    elif t[1]=='for' and t[3]=='hour':
+        duration = datetime.timedelta(hours = int(t[2]))
+    elif t[1]=='for' and t[3]=='day':
+        duration = datetime.timedelta(days = int(t[2]))
+    elif t[1]=='for' and t[3]=='month':
+        duration = datetime.timedelta(months = int(t[2]))
+    elif t[1]=='for' and t[3]=='year':
+        duration = datetime.timedelta(years = int(t[2]))
+    elif t[1]=='for' and t[3]=='week':
+        duration = datetime.timedelta(weeks = int(t[2]))
+    # tokiResult.duration = duration
+    t[0] = duration
 
 
 def p_expression_ondate(t):
     'ondate : ON DATE'
     if t[1] == 'on':
         d = pd.to_datetime(t[2])
-    tokiResult.startTime = d
-
+    # tokiResult.startTime = d
+    t[0] = d
 
 def p_expression_attime(t):
     '''attime : AT NUMBER AM
@@ -192,7 +210,8 @@ def p_expression_attime(t):
         h =datetime.timedelta(hours = 12 + int(t[2]))
     else:
         h =  pd.to_datetime(t[2]).time()
-    tokiResult.startTime = tokiResult.startTime + h
+    #tokiResult.startTime = tokiResult.startTime + h
+    t[0] = h
 
 
 def p_expression_appointment(t):
@@ -200,7 +219,8 @@ def p_expression_appointment(t):
         | APPOINTMENT'''
     if len(t)>2:
         if t[2] == 'with':
-            tokiResult.person = t[3]
+            #tokiResult.person = t[3]
+            t[0] = t[3]
 
 
 def p_error(t):
