@@ -5,12 +5,14 @@ import pandas as pd
 import sqlite3
 
 from TokiClass import TokiTask
+from TokiClass import TokiShowToday
+from TokiClass import TokiShowWeek
 
 ### Tokens ###
 tokens = (
     'SCHEDULE', 'AT', 'FROM', 'TO', 'FOR', 'EVERY', 'EVERYOTHER', 'APPOINTMENT', 'WITH',
     'DATE', 'TIMES', 'WEEK','MONTH','YEAR','HOUR','MINUTE','DAY', 'WEEKDAY',
-    'ON', 'NUMBER','AM','PM','OCLOCK', 'PERSON'
+    'ON', 'NUMBER','AM','PM','OCLOCK', 'PERSON','SHOW','TODAY','THISWEEK'
 )
 
 def t_SCHEDULE(t):
@@ -23,6 +25,10 @@ def t_AT(t):
 
 def t_FROM(t):
     r'from'
+    return t
+
+def t_TODAY(t):
+    r'today'
     return t
 
 def t_TO(t):
@@ -95,6 +101,15 @@ def t_PM(t):
     r'PM'
     return t
 
+def t_SHOW(t):
+    r'show'
+    return t
+
+def t_THISWEEK(t):
+    r'this week'
+    return t
+
+
 #t_WEEKDAY = r'MONDAY|'
 
 def t_DATE(t):
@@ -143,7 +158,12 @@ lexer = lex.lex()
 #         | EVERY NUMBER MONTH
 #         | EVERY NUMBER YEAR'''
 
-start = 'schedule'
+start = 'top'
+
+def p_top(t):
+    '''top : schedule
+        | showschedule'''
+    t[0] = t[1]
 
 def p_expression_schedule(t):
     '''schedule : SCHEDULE appointment ondate
@@ -196,7 +216,7 @@ def p_expression_duration(t):
 def p_expression_ondate(t):
     'ondate : ON DATE'
     if t[1] == 'on':
-        d = pd.to_datetime(t[2])
+        d = pd.to_datetime(t[2]).to_pydatetime()
     # tokiResult.startTime = d
     t[0] = d
 
@@ -209,7 +229,7 @@ def p_expression_attime(t):
     elif t[1]=='at' and t[3]=='PM':
         h =datetime.timedelta(hours = 12 + int(t[2]))
     else:
-        h =  pd.to_datetime(t[2]).time()
+        h =  datetime.timedelta(hours = t[2])
     #tokiResult.startTime = tokiResult.startTime + h
     t[0] = h
 
@@ -221,6 +241,14 @@ def p_expression_appointment(t):
         if t[2] == 'with':
             #tokiResult.person = t[3]
             t[0] = t[3]
+
+def p_expression_showschedule(t):
+    '''showschedule : SHOW TODAY
+    | SHOW THISWEEK'''
+    if t[2]=='today':
+        t[0]=TokiShowToday()
+    elif t[2]=='this week':
+        t[0]=TokiShowWeek()
 
 
 def p_error(t):
