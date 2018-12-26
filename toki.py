@@ -52,8 +52,8 @@ def show_today(c):
 
 def show_this_week(c):
     today = datetime.datetime.today().date()
-    startT = pd.to_datetime(today + datetime.timedelta(seconds=0)).to_pydatetime()
-    endT = pd.to_datetime(today + datetime.timedelta(days=7)).to_pydatetime() ##need to find this week
+    startT = dt - timedelta(days=today.weekday())
+    endT = start + timedelta(days=6)
     print(c.execute('SELECT * FROM calendar WHERE startTime BETWEEN ? AND ? ORDER BY startTime', (startT, endT)).fetchall())
 
 
